@@ -1,40 +1,48 @@
-# Python
+# ⚙️ Environnement Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
 *.egg
+*.egg-info/
+dist/
+build/
+*.log
 
-# Virtual Environment
-venv/
+# 📦 Environnement virtuel
+.venv/
 env/
+venv/
 ENV/
+.ENV/
+
+# 📁 Données temporaires et modèles téléchargés
+tmp/
+*.tmp
+*.bak
+cache/
+*.pth
+*.pt
+
+# 🤖 Dossiers de modèles Transformers (local HuggingFace cache)
+~/.cache/
+~/.huggingface/
+.huggingface/
+transformers_cache/
+*.bin
+
+# 🔐 Fichiers de secrets
 .env
+.secrets/
+.streamlit/secrets.toml
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
+# 🌐 Fichiers spécifiques à Streamlit
+.streamlit/config.toml
 
-# OS
+# 📄 Jupyter notebooks (si tu testes en notebook)
+.ipynb_checkpoints/
+
+# 🗑️ Fichiers système
 .DS_Store
 Thumbs.db
 
-# Environment variables
-.env 
+# 🐙 Git
+.gitignore
