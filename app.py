@@ -4,15 +4,12 @@ import torch
 import numpy as np
 import smtplib
 from email.message import EmailMessage
-import os
-from dotenv import load_dotenv
 
-# Charger les variables d'environnement
-load_dotenv()
-EMAIL_ADDRESS = os.getenv("EMAIL_USER")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASS")
+# 📦 Charger les identifiants de l'email depuis st.secrets
+EMAIL_ADDRESS = st.secrets["EMAIL_USER"]
+EMAIL_PASSWORD = st.secrets["EMAIL_PASS"]
 
-# Charger FinBERT
+# 📥 Charger FinBERT
 @st.cache_resource
 def load_model():
     tokenizer = AutoTokenizer.from_pretrained("yiyanghkust/finbert-tone")
@@ -21,7 +18,7 @@ def load_model():
 
 tokenizer, model = load_model()
 
-# Fonction d'envoi d'email
+# ✉️ Fonction d'envoi d'email
 def send_email(subject, body, to="pauljean.pecoraro@gmail.com"):
     msg = EmailMessage()
     msg.set_content(body)
@@ -29,18 +26,20 @@ def send_email(subject, body, to="pauljean.pecoraro@gmail.com"):
     msg['From'] = EMAIL_ADDRESS
     msg['To'] = to
 
-    # Connexion sécurisée au serveur SMTP de Gmail
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        smtp.send_message(msg)
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+    except Exception as e:
+        st.error(f"Erreur lors de l'envoi de l'email : {e}")
 
-# Interface Streamlit
+# 🎛️ Interface Streamlit
 st.title("Test d'Explicabilité du Modèle FinBERT")
 
-# Texte d'entrée
+# 📝 Texte d'entrée
 user_input = st.text_area("Entrez un extrait d'actualité financière, un tweet ou un commentaire d'analyste :")
 
-# Exécution de FinBERT
+# 📊 Exécution de FinBERT
 if user_input:
     inputs = tokenizer(user_input, return_tensors="pt", truncation=True)
     with torch.no_grad():
@@ -53,21 +52,32 @@ if user_input:
     for label, prob in zip(labels, probs_np):
         st.write(f"**{label}** : {prob:.2%}")
 
-    # Section enquête
+    # 🧠 Questionnaire
     st.subheader("Questionnaire sur l'Explicabilité")
     clarity = st.radio("Dans quelle mesure la classification du sentiment vous semble-t-elle claire ?", ["Très peu claire", "Plutôt peu claire", "Neutre", "Plutôt claire", "Très claire"])
     explainability = st.radio("Pourriez-vous expliquer ce résultat à un client ou un auditeur ?", ["Certainement pas", "Probablement pas", "Je ne sais pas", "Probablement oui", "Certainement oui"])
     usefulness = st.radio("Ce résultat vous aide-t-il à prendre une décision d'investissement ?", ["Pas du tout", "Un peu", "Moyennement", "Beaucoup", "Énormément"])
 
-    # Simulation inverse
+    # 🔄 Simulation inverse
     st.subheader("Simulation Inverse")
     user_guess = st.radio("Quel sentiment pensez-vous que le modèle a identifié ?", labels)
 
-    # Réécriture
+    # ✍️ Réécriture
     st.subheader("Défi de Réécriture")
     rewrite_input = st.text_area("Essayez de réécrire la phrase pour changer le sentiment :")
 
-    # Soumission
+    if rewrite_input.strip():
+        rewrite_inputs = tokenizer(rewrite_input, return_tensors="pt", truncation=True)
+        with torch.no_grad():
+            rewrite_outputs = model(**rewrite_inputs)
+            rewrite_probs = torch.nn.functional.softmax(rewrite_outputs.logits, dim=-1)
+            rewrite_probs_np = rewrite_probs[0].numpy()
+
+        st.markdown("**Analyse de Sentiment du Texte Réécrit :**")
+        for label, prob in zip(labels, rewrite_probs_np):
+            st.write(f"**{label}** : {prob:.2%}")
+
+    # 📬 Envoi des réponses
     if st.button("Soumettre le Questionnaire"):
         body = f"""
         Texte original : {user_input}
